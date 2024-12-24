@@ -24,7 +24,7 @@ class SQLitePerformanceRecorder(PerformanceRecorder):
                 conn.execute(
                     """
                     CREATE TABLE IF NOT EXISTS performance_records (
-                        id TEXT PRIMARY KEY,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         process_id TEXT NOT NULL,
                         created_at TEXT NOT NULL,
                         source TEXT,
