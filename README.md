@@ -62,6 +62,8 @@ uvicorn run:app --port 8000
 
 In this example, you can access AivisSpeech at http://127.0.0.1:8000/aivisspeech, Style-Bert-VITS2 at http://127.0.0.1:8000/sbv2, and NijiVoice at http://127.0.0.1:8000/nijivoice.
 
+**NOTE**: If you want to perform MP3 conversion, make sure to include `x_audio_format=mp3` as a query parameter in your request. 
+
 
 ## 🛠️ Customization
 
