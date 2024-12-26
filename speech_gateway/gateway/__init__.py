@@ -1,11 +1,18 @@
 from abc import ABC, abstractmethod
 import logging
-from fastapi import Request, APIRouter
+from fastapi import Request, APIRouter, HTTPException
 from fastapi.responses import Response
+from pydantic import BaseModel
 import httpx
 from ..source import StreamSource
 
 logger = logging.getLogger(__name__)
+
+
+class UnifiedTTSRequest(BaseModel):
+    text: str
+    speaker: str = None
+    service_name: str = None
 
 
 class SpeechGateway(ABC):
@@ -23,7 +30,7 @@ class SpeechGateway(ABC):
     def __init__(
         self,
         *,
-        stream_source: StreamSource,
+        stream_source: StreamSource = None,
         debug: bool = False
     ):
         self.stream_source = stream_source
@@ -37,7 +44,7 @@ class SpeechGateway(ABC):
         return filtered
 
     @abstractmethod
-    def register_endpoint(self, router: APIRouter, stream_source: StreamSource):
+    def register_endpoint(self, router: APIRouter):
         pass
 
     async def passthrough_handler(self, request: Request, path: str):
@@ -63,9 +70,12 @@ class SpeechGateway(ABC):
 
         return Response(content=r.content, status_code=r.status_code, headers=resp_headers)
 
+    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
+        raise HTTPException(status_code=400, detail=f"This speech service doesn't support unified interface for now: {self.__class__.__name__}")
+
     def get_router(self) -> APIRouter:
         router = APIRouter()
-        self.register_endpoint(router, self.stream_source)
+        self.register_endpoint(router)
         router.add_api_route(
             "/{path:path}",
             self.passthrough_handler,
