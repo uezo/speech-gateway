@@ -65,6 +65,43 @@ In this example, you can access AivisSpeech at http://127.0.0.1:8000/aivisspeech
 **NOTE**: If you want to perform MP3 conversion, make sure to include `x_audio_format=mp3` as a query parameter in your request. 
 
 
+## 🌟 Unified Interface
+
+You can use various text-to-speech services through a unified interface specification.
+Below is an example of providing a unified interface for AivisSpeech, Style-Bert-VITS2, and Nijivoice.
+
+```python
+from speech_gateway.gateway.unified import UnifiedGateway
+
+# Create UnifiedGateway and add gateways with its service name
+unified_gateway = UnifiedGateway(debug=True)
+unified_gateway.add_gateway("aivisspeech", aivisspeech_gateway, True)   # Set as default gateway
+unified_gateway.add_gateway("sbv2", sbv2_gateway)
+unified_gateway.add_gateway("nijivoice", nijivoice_gateway)
+
+# Add unified interface router
+app.include_router(unified_gateway.get_router())
+```
+
+You can access the services in a unified manner as shown in the client code below:
+
+```python
+import httpx
+
+req = {"text": "こんにちは。これはデフォルトサービスだよ。", "speaker": "888753761"}
+# req = {"text": "こんにちは。これはAivisSpeechだよ。", "speaker": "888753761", "service_name": "aivisspeech"}
+# req = {"text": "こんにちは。これはStyle-Bert-VITS2だよ。", "speaker": "0-0", "service_name": "sbv2"}
+# req = {"text": "こんにちは。これはにじボイスだよ。", "speaker": "a192db5f-bd8b-4fc7-bc08-af5ca5957c12", "service_name": "nijivoice"}
+
+resp = httpx.post("http://127.0.0.1:8000/tts", json=req, timeout=60)
+
+with open("tts.wav", "wb") as f:
+    f.write(resp.content)
+```
+
+**NOTE**: Due to the unified specification, it is not possible to use features specific to each text-to-speech service (e.g., intonation adjustment or pitch variation control). If you need high-quality speech synthesis utilizing such features, please use the individual service interfaces.
+
+
 ## 🛠️ Customization
 
 You can add new speech synthesis services to relay.

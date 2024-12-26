@@ -1,4 +1,6 @@
-from . import StreamSource
+import urllib.parse
+import httpx
+from . import StreamSource, StreamSourceError
 
 
 class VoicevoxStreamSource(StreamSource):
@@ -15,3 +17,15 @@ class VoicevoxStreamSource(StreamSource):
             "params": {"speaker": speaker},
             "json": audio_query
         }
+
+    async def get_audio_query(self, speaker: str, text: str, **kwargs):
+        try:
+            url = f"{self.base_url}/audio_query"
+
+            response = await self.http_client.post(url, params={"speaker": speaker, "text": text})
+            response.raise_for_status()
+
+            return response.json()
+
+        except httpx.RequestError as ex:
+            raise StreamSourceError(f"HTTP request failed: {ex}") from ex

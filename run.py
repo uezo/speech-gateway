@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from speech_gateway.gateway.voicevox import VoicevoxGateway
 from speech_gateway.gateway.nijivoice import NijiVoiceGateway
 from speech_gateway.gateway.sbv2 import StyleBertVits2Gateway
+from speech_gateway.gateway.unified import UnifiedGateway
 
 # Configure root logger
 logger = logging.getLogger("speech_gateway")
@@ -20,6 +21,12 @@ aivisspeech_gateway = VoicevoxGateway(base_url="http://127.0.0.1:10101", debug=T
 sbv2_gateway = StyleBertVits2Gateway(base_url="http://127.0.0.1:5000", debug=True)
 nijivoice_gateway = NijiVoiceGateway(api_key=NIJIVOICE_API_KEY, prefix="/nijivoice", debug=True)
 
+# Unified gateway
+unified_gateway = UnifiedGateway(debug=True)
+unified_gateway.add_gateway("aivisspeech", aivisspeech_gateway, True)
+unified_gateway.add_gateway("sbv2", sbv2_gateway)
+unified_gateway.add_gateway("nijivoice", nijivoice_gateway)
+
 # Create app
 app = FastAPI()
 
@@ -27,6 +34,7 @@ app = FastAPI()
 app.include_router(aivisspeech_gateway.get_router(), prefix="/aivisspeech")
 app.include_router(sbv2_gateway.get_router(), prefix="/sbv2")
 app.include_router(nijivoice_gateway.get_router(), prefix="/nijivoice")
+app.include_router(unified_gateway.get_router())
 
 # On app down
 @asynccontextmanager
