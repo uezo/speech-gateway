@@ -1,11 +1,12 @@
 import pytest
+import os
 import httpx
 from speech_gateway.source.nijivoice import NijiVoiceStreamSource
 from speech_gateway.source import StreamSourceError
 
 BASE_URL = "https://api.nijivoice.com"
 GATEWAY_BASE_URL = "http://127.0.0.1:8000/nijivoice"
-API_KEY = "your_api_key"
+NIJIVOICE_API_KEY = os.getenv("NIJIVOICE_API_KEY")
 VOICE_ACTOR_ID = "a192db5f-bd8b-4fc7-bc08-af5ca5957c12"
 PAYLOAD = {
     "script": "こんにちは。これはテストです。",
@@ -18,7 +19,7 @@ PAYLOAD = {
 @pytest.fixture
 def source():
     # Create an instance of NijiVoiceStreamSource
-    return NijiVoiceStreamSource(base_url=BASE_URL, api_key=API_KEY, debug=True)
+    return NijiVoiceStreamSource(base_url=BASE_URL, api_key=NIJIVOICE_API_KEY, debug=True)
 
 @pytest.mark.asyncio
 async def test_get_cache_key(source):

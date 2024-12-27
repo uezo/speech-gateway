@@ -1,13 +1,14 @@
 import pytest
+import os
 from speech_gateway.source.voicevox import VoicevoxStreamSource
 
-BASE_URL = "http://127.0.0.1:50021"
+VOICEVOX_URL = os.getenv("VOICEVOX_URL")
 SPEAKER = "2"
 
 @pytest.fixture
 def source():
     # Create an instance of VoicevoxStreamSource
-    return VoicevoxStreamSource(base_url=BASE_URL)
+    return VoicevoxStreamSource(base_url=VOICEVOX_URL)
 
 @pytest.fixture
 def audio_query():
@@ -80,7 +81,7 @@ async def test_make_stream_request(source, audio_query):
     # Test make_stream_request method
     request = source.make_stream_request(SPEAKER, audio_query)
     assert request["method"] == "POST"
-    assert request["url"] == f"{BASE_URL}/synthesis"
+    assert request["url"] == f"{VOICEVOX_URL}/synthesis"
     assert request["params"] == {"speaker": SPEAKER}
     assert request["json"] == audio_query
 

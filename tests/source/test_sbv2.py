@@ -1,12 +1,14 @@
 import pytest
+import os
 from speech_gateway.source.sbv2 import StyleBertVits2StreamSource
 
-BASE_URL = "http://127.0.0.1:5000"
+SBV2_URL = os.getenv("SBV2_URL")
+
 
 @pytest.fixture
 def source():
     # Create an instance of StyleBertVits2StreamSource
-    return StyleBertVits2StreamSource(base_url=BASE_URL)
+    return StyleBertVits2StreamSource(base_url=SBV2_URL)
 
 @pytest.mark.asyncio
 async def test_get_cache_key(source):
@@ -31,7 +33,7 @@ async def test_make_stream_request(source):
     query_params = {"text": "こんにちは。これはテストです。", "voice": "test"}
     request = source.make_stream_request(query_params)
     assert request["method"] == "GET"
-    assert request["url"] == f"{BASE_URL}/voice"
+    assert request["url"] == f"{SBV2_URL}/voice"
     assert request["params"] == query_params
 
 @pytest.mark.asyncio

@@ -162,4 +162,9 @@ cython_debug/
 voicevox_cache/
 sbv2_cache/
 nijivoice_cache/
+openai_cache/
+example.py
+testrun.py
+client.py
+pytest.ini
 performance.db
