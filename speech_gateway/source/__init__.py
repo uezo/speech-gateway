@@ -85,6 +85,10 @@ class StreamSource(ABC):
             if self.debug:
                 logger.info(f"[generate]: {cache_key}")
             http_request = self.make_stream_request(**kwargs)
+
+            if self.debug:
+                logger.info(f"Request to speech service: {http_request}")
+
             stream = self.fetch_stream_raw(http_request)
 
             # Convert format

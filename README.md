@@ -10,6 +10,7 @@ A reverse proxy server that enhances speech synthesis with essential, extensible
 - 🔄 **Format Conversion**: Effortlessly convert WAV to MP3 for bandwidth-friendly responses.
 - 📊 **Performance Metrics**: Track synthesis time and cache hits for in-depth insights.
 - ⚡️ **Low Latency**: Streamlined pipeline for minimal delay, delivering fast results!
+- 🌟 **Unified Interface**: Use various text-to-speech services through a unified interface — now with multi-language support!🌏
 
 
 ## 🎁 Installation
@@ -83,6 +84,20 @@ unified_gateway.add_gateway("nijivoice", nijivoice_gateway)
 app.include_router(unified_gateway.get_router())
 ```
 
+### Parameters
+
+POST a JSON object with the following fields:
+
+| Parameter     | Type   | Required | Description |
+|---------------|--------|----------|---------------------------------------------------------------------------------------------|
+| `text`        | string | Required | The text to be synthesized into speech. |
+| `speaker`     | string | Optional | The unique identifier for the voice in each speech service.<br>For Style-Bert-VITS2, specify as `{model_id}-{speaker_id}`.<br>If omitted, the default speaker of the speech service will be used. |
+| `service_name`| string | Optional | The name of the service as specified in `add_gateway`.<br>If omitted, the default gateway will be used. |
+| `language`| string | Optional | The language. The corresponding text-to-speech service will be used. If omitted, the default gateway will be used. |
+
+
+### Client code
+
 You can access the services in a unified manner as shown in the client code below:
 
 ```python
@@ -100,6 +115,36 @@ with open("tts.wav", "wb") as f:
 ```
 
 **NOTE**: Due to the unified specification, it is not possible to use features specific to each text-to-speech service (e.g., intonation adjustment or pitch variation control). If you need high-quality speech synthesis utilizing such features, please use the individual service interfaces.
+
+
+### Multi-language Support
+
+You can configure the system to use the appropriate speech service based on the language, without explicitly specifying the service name.  
+By passing `languages` to `add_gateway`, you can register a speech service that corresponds to the `language` specified in the request. Additionally, by registering a `default_speaker`, you can eliminate the need to specify a `speaker` in each request.
+
+```python
+# Gateway for default language (ja-JP) - Voice: 888753761
+unified_gateway.add_gateway("aivisspeech", aivisspeech_gateway, default_speaker="888753761", default=True)
+
+# Gateway for en-US and zh-CN - Voice: Alloy
+unified_gateway.add_gateway("openai", openai_gateway, languages=["en-US", "zh-CN"], default_speaker="alloy")
+```
+
+Here is an example of client code to call this API. Switching the `language` enables easy support for multiple languages.
+
+```python
+import httpx
+
+# Simply set the text and language - easily switch between multiple languages
+req = {"text": "こんにちは。これはデフォルトサービスだよ。"}
+# req = {"text": "Hello. This is the speech service for English.", "language": "en-US"}
+# req = {"text": "你好，这是英语的语音服务。", "language": "zh-CN"}
+
+resp = httpx.post("http://127.0.0.1:8000/tts", json=req, timeout=60)
+
+with open("tts.wav", "wb") as f:
+    f.write(resp.content)
+```
 
 
 ## 🛠️ Customization

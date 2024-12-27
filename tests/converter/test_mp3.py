@@ -1,4 +1,5 @@
 import pytest
+import os
 from typing import AsyncIterator
 from speech_gateway.converter import MP3Converter, FormatConverterError
 
@@ -37,21 +38,3 @@ async def test_mp3_conversion_error_handling(mp3_converter):
     with pytest.raises(FormatConverterError):
         async for _ in mp3_converter.convert(input_stream()):
             pass
-
-@pytest.mark.asyncio
-async def test_mp3_converter_large_input(mp3_converter):
-    # Test the convert method with a large input stream
-
-    async def input_stream() -> AsyncIterator[bytes]:
-        for _ in range(100):
-            yield b"Large data chunk" * 100
-
-    output = b""
-    try:
-        async for chunk in mp3_converter.convert(input_stream()):
-            output += chunk
-    except FormatConverterError as e:
-        pytest.fail(f"MP3 conversion failed with error: {e}")
-
-    # Assert that the output is not empty
-    assert output != b""

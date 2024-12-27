@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 from fastapi import Request, APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import httpx
 from ..source import StreamSource
 
@@ -10,9 +10,27 @@ logger = logging.getLogger(__name__)
 
 
 class UnifiedTTSRequest(BaseModel):
-    text: str
-    speaker: str = None
-    service_name: str = None
+    text: str = Field(..., description="The text to be synthesized into speech.", example="hello")
+    speaker: str = Field(
+        None, 
+        description="The unique identifier for the voice in each speech service. "
+                    "For Style-Bert-VITS2, specify as `{model_id}-{speaker_id}`. "
+                    "If omitted, the default speaker of the speech service will be used.",
+        example="888753761"
+    )
+    service_name: str = Field(
+        None, 
+        description="The name of the service as specified in `add_gateway`. "
+                    "If omitted, the default gateway will be used.",
+        example="aivisspeech",
+    )
+    language: str = Field(
+        None, 
+        description="The language. The corresponding text-to-speech service will be used. "
+                    "Specify the language code in ISO639-1 format combined with the country code using a hyphen."
+                    "If omitted, the default gateway will be used.",
+        example="en-US",
+    )
 
 
 class SpeechGateway(ABC):
