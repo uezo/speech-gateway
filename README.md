@@ -92,6 +92,7 @@ POST a JSON object with the following fields:
 |---------------|--------|----------|---------------------------------------------------------------------------------------------|
 | `text`        | string | Required | The text to be synthesized into speech. |
 | `speaker`     | string | Optional | The unique identifier for the voice in each speech service.<br>For Style-Bert-VITS2, specify as `{model_id}-{speaker_id}`.<br>If omitted, the default speaker of the speech service will be used. |
+| `style`| string | Optional | A predefined set of voice styles that includes `neutral`, `joy`, `angry`, `sorrow`, `fun`, and `surprised`. |
 | `service_name`| string | Optional | The name of the service as specified in `add_gateway`.<br>If omitted, the default gateway will be used. |
 | `language`| string | Optional | The language. The corresponding text-to-speech service will be used. If omitted, the default gateway will be used. |
 
@@ -115,6 +116,45 @@ with open("tts.wav", "wb") as f:
 ```
 
 **NOTE**: Due to the unified specification, it is not possible to use features specific to each text-to-speech service (e.g., intonation adjustment or pitch variation control). If you need high-quality speech synthesis utilizing such features, please use the individual service interfaces.
+
+
+### Applying Style
+
+Define styles on server side.
+
+```python
+aivisspeech_gateway = VoicevoxGateway(base_url="http://127.0.0.1:10101", debug=True)
+# Define speakers for each style
+aivisspeech_gateway.style_mapper["888753761"] = {
+    "joy": "888753764",
+    "angry": "888753765",
+    "sorrow": "888753765",
+    "fun": "888753762",
+    "surprised": "888753762"
+}
+
+sbv2_gateway = StyleBertVits2Gateway(base_url="http://127.0.0.1:5000", debug=True)
+# Define sytle name for each style
+sbv2_gateway.style_mapper["0-0"] = {
+    "joy": "上機嫌",
+    "angry": "怒り・悲しみ",
+    "sorrow": "怒り・悲しみ",
+    "fun": "テンション高め",
+    "surprised": "テンション高め"
+}
+```
+
+Call with style from client.
+
+```python
+req = {"service_name": "aivisspeech", "text": "こんにちは。これはデフォルトサービスだよ。", "speaker": "888753761", "style": "angry"}
+# req = {"service_name": "sbv2", "text": "こんにちは。これはStyle-Bert-VITS2だよ。", "speaker": "0-0", "style": "angry"}
+
+resp = httpx.post("http://127.0.0.1:8000/tts", json=req, timeout=60)
+
+with open("tts.wav", "wb") as f:
+    f.write(resp.content)
+```
 
 
 ### Multi-language Support

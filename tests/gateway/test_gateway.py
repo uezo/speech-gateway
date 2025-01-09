@@ -15,8 +15,20 @@ async def test_unified_gateway_voicevox():
     assert len(resp.content) > 10000
 
 @pytest.mark.asyncio
+async def test_unified_gateway_voicevox_with_style():
+    req = {"text": "こんにちは。これはボイスボックスのテストです。", "speaker": "46", "service_name": "voicevox", "style": "Angry"}
+    resp = httpx.post("http://127.0.0.1:8000/tts", json=req)
+    assert len(resp.content) > 10000
+
+@pytest.mark.asyncio
 async def test_unified_gateway_sbv2():
     req = {"text": "こんにちは。これはスタイルバートヴィッツ2のテストです。", "speaker": "0-0", "service_name": "sbv2"}
+    resp = httpx.post("http://127.0.0.1:8000/tts", json=req)
+    assert len(resp.content) > 10000
+
+@pytest.mark.asyncio
+async def test_unified_gateway_sbv2_with_style():
+    req = {"text": "こんにちは。これはスタイルバートヴィッツ2のテストです。", "speaker": "0-0", "service_name": "sbv2", "style": "Angry"}
     resp = httpx.post("http://127.0.0.1:8000/tts", json=req)
     assert len(resp.content) > 10000
 
