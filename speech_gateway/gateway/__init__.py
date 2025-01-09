@@ -18,6 +18,13 @@ class UnifiedTTSRequest(BaseModel):
                     "If omitted, the default speaker of the speech service will be used.",
         example="888753761"
     )
+    style: str = Field(
+        None, 
+        description="A predefined set of voice styles that includes `neutral`, `joy`, `angry`, `sorrow`, `fun`, and `surprised`. "
+                    "These styles act as presets and must be mapped appropriately to the corresponding style identifiers in each speech service. "
+                    "If omitted, no style will be applied.",
+        example="neutral"
+    )
     service_name: str = Field(
         None, 
         description="The name of the service as specified in `add_gateway`. "
