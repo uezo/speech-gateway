@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from . import SpeechGateway, UnifiedTTSRequest
 from ..cache.file import FileCacheStorage
+from ..converter.mp3 import MP3Converter
 from ..performance_recorder import SQLitePerformanceRecorder
 from ..source.openai_speech import OpenAIStreamSource
 
@@ -17,6 +18,7 @@ class OpenAIGateway(SpeechGateway):
                     api_key=api_key,
                     base_url=base_url or "https://api.openai.com/v1",
                     cache_storage=FileCacheStorage(cache_dir="openai_cache"),
+                    format_converters={},
                     performance_recorder=SQLitePerformanceRecorder(),
                     debug=debug
                 ),
@@ -31,19 +33,19 @@ class OpenAIGateway(SpeechGateway):
             request_json = await request.json()
 
             if x_audio_format:
-                audio_format = x_audio_format
-            elif request_json.get("response_format"):
-                audio_format = request_json["response_format"]
+                if x_audio_format in ["mp3", "opus", "aac", "flac", "wav", "pcm"]:
+                    request_json["response_format"] = x_audio_format
+                else:
+                    # Set wave to convert to other format later
+                    request_json["response_format"] = "wav"
             else:
-                audio_format = "wav"
-            request_json["response_format"] = audio_format
+                x_audio_format = request_json.get("response_format", "mp3")
 
-            # NOTE: audio_format and request_json["response_format"] are always same here
             stream_resp = await self.stream_source.fetch_stream(
-                audio_format=audio_format,
-                request_json=request_json
+                request_json=request_json,
+                audio_format=x_audio_format
             )
-            return StreamingResponse(stream_resp, media_type=f"audio/{audio_format}")
+            return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
 
     async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
         request_json = {
