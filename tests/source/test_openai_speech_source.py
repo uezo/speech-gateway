@@ -20,7 +20,7 @@ async def test_get_cache_key(source):
         "response_format": "wav"
     }
     cache_key = source.get_cache_key("mp3", request_json)
-    assert cache_key.endswith(".wav")   # Use response_format in request_json
+    assert cache_key.endswith(".mp3")
 
     cache_key = source.get_cache_key("wav", request_json)
     assert cache_key.endswith(".wav")
