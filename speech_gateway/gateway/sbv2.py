@@ -1,3 +1,4 @@
+from typing import Dict
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from . import SpeechGateway, UnifiedTTSRequest
@@ -8,7 +9,7 @@ from ..source.sbv2 import StyleBertVits2StreamSource
 
 
 class StyleBertVits2Gateway(SpeechGateway):
-    def __init__(self, *, stream_source: StyleBertVits2StreamSource = None, base_url: str = None, debug = False):
+    def __init__(self, *, stream_source: StyleBertVits2StreamSource = None, base_url: str = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
         self.stream_source: StyleBertVits2StreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -23,6 +24,7 @@ class StyleBertVits2Gateway(SpeechGateway):
                 ),
                 debug=debug
             )
+        self.style_mapper = style_mapper or {}
 
     def register_endpoint(self, router: APIRouter):
         @router.get("/voice")
@@ -47,6 +49,13 @@ class StyleBertVits2Gateway(SpeechGateway):
             "model_id": model_id,
             "speaker_id": speaker_id
         }
+
+        # Apply style
+        if tts_request.style is not None and (styles_for_speaker := self.style_mapper.get(tts_request.speaker)):
+            for k, v in styles_for_speaker.items():
+                if k.lower() == tts_request.style.lower():
+                    query_params["style"] = v
+                    break
 
         # Additional params
         for k, v in dict(request.query_params).items():

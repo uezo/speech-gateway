@@ -1,3 +1,4 @@
+from typing import Dict
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from . import SpeechGateway, UnifiedTTSRequest
@@ -8,7 +9,7 @@ from ..source.voicevox import VoicevoxStreamSource
 
 
 class VoicevoxGateway(SpeechGateway):
-    def __init__(self, *, stream_source: VoicevoxStreamSource = None, base_url: str = None, debug = False):
+    def __init__(self, *, stream_source: VoicevoxStreamSource = None, base_url: str = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
         self.stream_source: VoicevoxStreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -23,6 +24,7 @@ class VoicevoxGateway(SpeechGateway):
                 ),
                 debug=debug
             )
+        self.style_mapper = style_mapper or {}
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/synthesis")
@@ -36,10 +38,19 @@ class VoicevoxGateway(SpeechGateway):
             return StreamingResponse(stream_resp, media_type=f"audio/{audio_format}")
 
     async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
-        audio_query = await self.stream_source.get_audio_query(tts_request.speaker, tts_request.text)
+        speaker = tts_request.speaker
+
+        # Apply style
+        if tts_request.style is not None and (styles_for_speaker := self.style_mapper.get(tts_request.speaker)):
+            for k, v in styles_for_speaker.items():
+                if k.lower() == tts_request.style.lower():
+                    speaker = v
+                    break
+
+        audio_query = await self.stream_source.get_audio_query(speaker, tts_request.text)
         stream_resp = await self.stream_source.fetch_stream(
             audio_format=x_audio_format,
-            speaker=tts_request.speaker,
+            speaker=speaker,
             audio_query=audio_query,
         )
         return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
