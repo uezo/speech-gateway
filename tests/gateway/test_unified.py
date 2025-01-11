@@ -1,5 +1,6 @@
 import pytest
 import os
+import httpx
 from speech_gateway.gateway.voicevox import VoicevoxGateway
 from speech_gateway.gateway.nijivoice import NijiVoiceGateway
 from speech_gateway.gateway.sbv2 import StyleBertVits2Gateway
@@ -41,3 +42,43 @@ async def test_unified_gateway_default():
     assert unified_gateway.get_gateway(UnifiedTTSRequest(text="hello", language="zh-CN")) == openai_gateway
 
     assert unified_gateway.get_gateway(UnifiedTTSRequest(text="hello", service_name="sbv2", language="en-US")) == sbv2_gateway
+
+
+
+@pytest.mark.asyncio
+async def test_voicevox_unified(random_text, wave_checker, audio_transcriber):
+    req = {
+        "text": random_text
+    }
+    resp = httpx.post("http://127.0.0.1:8000/tts", json=req)
+    audio_data = resp.content
+    assert wave_checker(audio_data)
+    assert "音声合成" in audio_transcriber(audio_data, "wav")
+
+
+@pytest.mark.asyncio
+async def test_voicevox_unified_wav(random_text, wave_checker, audio_transcriber):
+    req = {
+        "text": random_text
+    }
+    query_params = {
+        "x_audio_format": "wav"
+    }
+    resp = httpx.post("http://127.0.0.1:8000/tts", params=query_params, json=req)
+    audio_data = resp.content
+    assert wave_checker(audio_data)
+    assert "音声合成" in audio_transcriber(audio_data, "wav")
+
+
+@pytest.mark.asyncio
+async def test_voicevox_unified_mp3(random_text, mp3_checker, audio_transcriber):
+    req = {
+        "text": random_text
+    }
+    query_params = {
+        "x_audio_format": "mp3"
+    }
+    resp = httpx.post("http://127.0.0.1:8000/tts", params=query_params, json=req)
+    audio_data = resp.content
+    assert mp3_checker(audio_data)
+    assert "音声合成" in audio_transcriber(audio_data, "mp3")
