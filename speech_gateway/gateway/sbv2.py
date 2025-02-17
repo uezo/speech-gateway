@@ -4,12 +4,12 @@ from fastapi.responses import StreamingResponse
 from . import SpeechGateway, UnifiedTTSRequest
 from ..cache.file import FileCacheStorage
 from ..converter.mp3 import MP3Converter
-from ..performance_recorder import SQLitePerformanceRecorder
+from ..performance_recorder import PerformanceRecorder, SQLitePerformanceRecorder
 from ..source.sbv2 import StyleBertVits2StreamSource
 
 
 class StyleBertVits2Gateway(SpeechGateway):
-    def __init__(self, *, stream_source: StyleBertVits2StreamSource = None, base_url: str = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
+    def __init__(self, *, stream_source: StyleBertVits2StreamSource = None, base_url: str = None, cache_dir: str = None, performance_recorder: PerformanceRecorder = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
         self.stream_source: StyleBertVits2StreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -17,9 +17,9 @@ class StyleBertVits2Gateway(SpeechGateway):
             super().__init__(
                 stream_source=StyleBertVits2StreamSource(
                     base_url=base_url or "http://127.0.0.1:5000",
-                    cache_storage=FileCacheStorage(cache_dir="sbv2_cache"),
+                    cache_storage=FileCacheStorage(cache_dir=cache_dir or "sbv2_cache"),
                     format_converters={"mp3": MP3Converter(bitrate="64k")},
-                    performance_recorder=SQLitePerformanceRecorder(),
+                    performance_recorder=performance_recorder or SQLitePerformanceRecorder(),
                     debug=debug
                 ),
                 debug=debug
