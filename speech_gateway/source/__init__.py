@@ -128,7 +128,7 @@ class StreamSource(ABC):
 
         self.performance_recorder.record(
             process_id=cache_key, source=self.__class__.__name__, text=text,
-            audio_format=audio_format, cached=cached, elapsed=time() - start_time
+            audio_format=audio_format, cached=1 if cached else 0, elapsed=time() - start_time
         )
 
     async def close(self):
