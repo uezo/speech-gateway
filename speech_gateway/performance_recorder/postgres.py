@@ -70,7 +70,6 @@ class PostgreSQLPerformanceRecorder(PerformanceRecorder):
                     continue
 
                 try:
-                    print(f"rec: {record}")
                     self.insert_record(conn, record)
                 except (psycopg2.InterfaceError, psycopg2.OperationalError):
                     try:
@@ -82,7 +81,6 @@ class PostgreSQLPerformanceRecorder(PerformanceRecorder):
                     time.sleep(0.5)
                     conn = self.connect_db()
                     self.insert_record(conn, record)
-                    print(f"rec2: {record}")
 
                 self.record_queue.task_done()
         finally:

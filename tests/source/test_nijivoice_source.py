@@ -116,7 +116,6 @@ async def test_fetch_stream(source):
             payload=PAYLOAD,
             gateway_base_url=GATEWAY_BASE_URL,
         ):
-            print(chunk)
             assert isinstance(chunk, bytes)
     except Exception as e:
         pytest.fail(f"fetch_stream failed: {e}")
