@@ -3,12 +3,12 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from . import SpeechGateway, UnifiedTTSRequest
 from ..cache.file import FileCacheStorage
-from ..performance_recorder import SQLitePerformanceRecorder
+from ..performance_recorder import PerformanceRecorder, SQLitePerformanceRecorder
 from ..source.nijivoice import NijiVoiceStreamSource
 
 
 class NijiVoiceGateway(SpeechGateway):
-    def __init__(self, *, stream_source: NijiVoiceStreamSource = None, api_key: str = None, speeds: Dict[str, float] = None, base_url: str = None, prefix: str = None, debug = False):
+    def __init__(self, *, stream_source: NijiVoiceStreamSource = None, api_key: str = None, speeds: Dict[str, float] = None, base_url: str = None, prefix: str = None, cache_dir: str = None, performance_recorder: PerformanceRecorder = None, debug = False):
         self.stream_source: NijiVoiceStreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -17,9 +17,9 @@ class NijiVoiceGateway(SpeechGateway):
                 stream_source=NijiVoiceStreamSource(
                     api_key=api_key,
                     base_url=base_url or "https://api.nijivoice.com",
-                    cache_storage=FileCacheStorage(cache_dir="nijivoice_cache"),
+                    cache_storage=FileCacheStorage(cache_dir=cache_dir or "nijivoice_cache"),
                     format_converters={},
-                    performance_recorder=SQLitePerformanceRecorder(),
+                    performance_recorder=performance_recorder or SQLitePerformanceRecorder(),
                     debug=debug
                 ),
                 debug=debug
