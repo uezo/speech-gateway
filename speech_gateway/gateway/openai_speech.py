@@ -7,7 +7,7 @@ from ..source.openai_speech import OpenAIStreamSource
 
 
 class OpenAIGateway(SpeechGateway):
-    def __init__(self, *, stream_source: OpenAIStreamSource = None, api_key: str = None, model: str = "tts-1", speed: float = 1.0, base_url: str = None, cache_dir: str = None, performance_recorder: PerformanceRecorder = None, debug = False):
+    def __init__(self, *, stream_source: OpenAIStreamSource = None, api_key: str = None, model: str = "tts-1", speed: float = 1.0, instructions: str = None, base_url: str = None, cache_dir: str = None, performance_recorder: PerformanceRecorder = None, debug = False):
         self.stream_source: OpenAIStreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -25,6 +25,7 @@ class OpenAIGateway(SpeechGateway):
             )
             self.model = model
             self.speed = speed
+            self.instructions = instructions
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/audio/speech")
@@ -52,6 +53,7 @@ class OpenAIGateway(SpeechGateway):
             "voice": tts_request.speaker,
             "input": tts_request.text,
             "speed": self.speed,
+            "instructions": self.instructions,
             "response_format": x_audio_format
         }
 

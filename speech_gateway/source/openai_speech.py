@@ -41,9 +41,16 @@ class OpenAIStreamSource(StreamSource):
         return request_json.get("input")
 
     def make_stream_request(self, request_json: dict, **kwargs):
+        if "azure" in self.base_url:
+            url = self.base_url
+            headers = {"api-key": self.api_key}
+        else:
+            url = f"{self.base_url}/audio/speech"
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+
         return {
             "method": "POST",
-            "url": self.base_url + "/audio/speech",
-            "headers": {"Authorization": f"Bearer {self.api_key}"},
+            "url": url,
+            "headers": headers,
             "json": request_json
         }
