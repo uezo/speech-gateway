@@ -3,6 +3,8 @@ import os
 from speech_gateway.source.openai_speech import OpenAIStreamSource
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_BASE_URL =os.getenv("AZURE_OPENAI_BASE_URL")
 
 @pytest.fixture
 def source():
@@ -89,3 +91,86 @@ async def test_fetch_stream(source):
             assert isinstance(chunk, bytes)
     except Exception as e:
         pytest.fail(f"fetch_stream failed: {e}")
+
+@pytest.mark.asyncio
+async def test_fetch_stream_raw(source):
+    # Test fetch_stream_raw with a real request (ensure server is running locally)
+    request_json = {
+        "model": "tts-1",
+        "voice": "alloy",
+        "input": "こんにちは。これはテストです。",
+        "speed": 1.0,
+        "response_format": "wav"
+    }
+    http_request = source.make_stream_request(request_json)
+
+    try:
+        async for chunk in source.fetch_stream_raw(http_request):
+            assert isinstance(chunk, bytes)
+    except Exception as e:
+        pytest.fail(f"fetch_stream_raw failed: {e}")
+
+@pytest.mark.asyncio
+async def test_fetch_stream(source):
+    # Test fetch_stream method with conversion and caching
+    request_json = {
+        "model": "tts-1",
+        "voice": "alloy",
+        "input": "こんにちは。これはテストです。",
+        "speed": 1.0,
+        "response_format": "wav"
+    }
+
+    audio_format = "wav"
+
+    try:
+        async for chunk in await source.fetch_stream(audio_format, request_json=request_json):
+            assert isinstance(chunk, bytes)
+    except Exception as e:
+        pytest.fail(f"fetch_stream failed: {e}")
+
+
+@pytest.mark.asyncio
+async def test_fetch_stream_raw_azure(source):
+    # Use Azure OpenAI API
+    source.api_key = AZURE_OPENAI_API_KEY
+    source.base_url = AZURE_OPENAI_BASE_URL
+
+    # Test fetch_stream_raw with a real request (ensure server is running locally)
+    request_json = {
+        "model": "gpt-4o-mini-tts",
+        "voice": "alloy",
+        "input": "こんにちは。これはテストです。",
+        "speed": 1.0,
+        "response_format": "wav"
+    }
+    http_request = source.make_stream_request(request_json)
+
+    try:
+        async for chunk in source.fetch_stream_raw(http_request):
+            assert isinstance(chunk, bytes)
+    except Exception as e:
+        pytest.fail(f"fetch_stream_raw_azure failed: {e}")
+
+@pytest.mark.asyncio
+async def test_fetch_stream_azure(source):
+    # Use Azure OpenAI API
+    source.api_key = AZURE_OPENAI_API_KEY
+    source.base_url = AZURE_OPENAI_BASE_URL
+
+    # Test fetch_stream method with conversion and caching
+    request_json = {
+        "model": "gpt-4o-mini-tts",
+        "voice": "alloy",
+        "input": "こんにちは。これはテストです。",
+        "speed": 1.0,
+        "response_format": "wav"
+    }
+
+    audio_format = "wav"
+
+    try:
+        async for chunk in await source.fetch_stream(audio_format, request_json=request_json):
+            assert isinstance(chunk, bytes)
+    except Exception as e:
+        pytest.fail(f"fetch_stream_azure failed: {e}")
