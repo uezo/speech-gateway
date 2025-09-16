@@ -9,7 +9,7 @@ from ..source.voicevox import VoicevoxStreamSource
 
 
 class VoicevoxGateway(SpeechGateway):
-    def __init__(self, *, stream_source: VoicevoxStreamSource = None, base_url: str = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
+    def __init__(self, *, stream_source: VoicevoxStreamSource = None, base_url: str = None, cache_dir: str = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
         self.stream_source: VoicevoxStreamSource = None
         if stream_source:
             super().__init__(stream_source=stream_source, debug=debug)
@@ -17,7 +17,7 @@ class VoicevoxGateway(SpeechGateway):
             super().__init__(
                 stream_source=VoicevoxStreamSource(
                     base_url=base_url or "http://127.0.0.1:50021",
-                    cache_storage=FileCacheStorage(cache_dir="voicevox_cache"),
+                    cache_storage=FileCacheStorage(cache_dir=cache_dir or "voicevox_cache"),
                     format_converters={"mp3": MP3Converter(bitrate="64k")},
                     performance_recorder=SQLitePerformanceRecorder(),
                     debug=debug
