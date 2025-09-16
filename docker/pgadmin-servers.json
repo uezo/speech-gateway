@@ -1,0 +1,13 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "speech-gateway",
+            "Group": "Servers",
+            "Host": "spgw-db",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Username": "postgres",
+            "SSLMode": "prefer"
+        }
+    }
+}
