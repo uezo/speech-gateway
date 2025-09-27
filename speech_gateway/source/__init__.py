@@ -61,7 +61,12 @@ class StreamSource(ABC):
         try:
             async with self.http_client.stream(**http_request) as audio_resp:
                 if audio_resp.status_code != 200:
-                    raise StreamSourceError(f"Stream from voice service failed: {audio_resp.status_code}")
+                    resp_body = ""
+                    try:
+                        resp_body = await audio_resp.aread()
+                    except:
+                        pass
+                    raise StreamSourceError(f"Stream from voice service failed: {audio_resp.status_code}: {resp_body}")
 
                 async for chunk in audio_resp.aiter_bytes(1024):
                     yield chunk
