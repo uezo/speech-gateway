@@ -32,17 +32,21 @@ class FileCacheStorage(CacheStorage):
             raise IOError(f"Error reading file {file_path}: {str(ex)}")
 
     async def write_cache(self, input_stream: AsyncIterator[bytes], cache_key: str) -> AsyncIterator[bytes]:
+        file_path = self.cache_dir / cache_key
         try:
-            async with aiofiles.open(self.cache_dir / cache_key, "wb") as file:
+            async with aiofiles.open(file_path, "wb") as file:
                 async for chunk in input_stream:
-                    try:
-                        await file.write(chunk)
-                        await file.flush()
-                        yield chunk
-                    except Exception as write_error:
-                        raise CacheStorageError(f"Error writing to file: {str(write_error)}")
+                    await file.write(chunk)
+                    await file.flush()
+                    yield chunk
 
         except Exception as ex:
+            # Clean up partial file if it was created
+            if file_path.exists():
+                try:
+                    file_path.unlink()
+                except:
+                    pass
             raise CacheStorageError(f"Error during file save operation: {str(ex)}")
 
     async def delete_cache(self, cache_key: str) -> None:
