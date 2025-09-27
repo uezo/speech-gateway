@@ -16,7 +16,7 @@ A reverse proxy server that enhances speech synthesis with essential, extensible
 ## 🎁 Installation
 
 ```sh
-pip install git+https://github.com/uezo/speech-gateway
+pip install speech-gateway
 ```
 
 To use MP3 format conversion, you also need to install ffmpeg to your computer.
