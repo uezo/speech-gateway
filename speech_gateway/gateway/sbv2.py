@@ -50,6 +50,9 @@ class StyleBertVits2Gateway(SpeechGateway):
             "speaker_id": speaker_id
         }
 
+        if tts_request.speed:
+            query_params["length"] = 1 / tts_request.speed
+
         # Apply style
         if tts_request.style is not None and (styles_for_speaker := self.style_mapper.get(tts_request.speaker)):
             for k, v in styles_for_speaker.items():

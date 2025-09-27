@@ -67,7 +67,7 @@ class NijiVoiceGateway(SpeechGateway):
 
         payload = {
             "script": tts_request.text,
-            "speed": str(self.speeds.get(tts_request.speaker, "1.0")),
+            "speed": str(tts_request.speed) if tts_request.speed else str(self.speeds.get(tts_request.speaker, "1.0")),
             "format": x_audio_format if x_audio_format == "mp3" else "wav"
         }
 

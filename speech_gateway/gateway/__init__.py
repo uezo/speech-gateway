@@ -25,6 +25,14 @@ class UnifiedTTSRequest(BaseModel):
                     "If omitted, no style will be applied.",
         example="neutral"
     )
+    speed: float = Field(
+        None,
+        description="The speed of synthesized speech, where 1.0 is normal speed. "
+                    "Values greater than 1.0 increase the speed (e.g., 1.5 is 50% faster), "
+                    "and values less than 1.0 decrease the speed (e.g., 0.5 is 50% slower). "
+                    "The acceptable range depends on each speech service.",
+        example=1.0
+    )
     service_name: str = Field(
         None, 
         description="The name of the service as specified in `add_gateway`. "

@@ -53,7 +53,11 @@ class AzureGateway(SpeechGateway):
         elif x_audio_format == "mp3":
             azure_audio_format = "audio-16khz-32kbitrate-mono-mp3"
 
-        ssml_text = f"<speak version='1.0' xml:lang='{tts_request.language or self.default_language}'><voice xml:lang='{tts_request.language or self.default_language}' name='{tts_request.speaker}'>{tts_request.text}</voice></speak>"
+        if tts_request.speed:
+            speed_percentage = (tts_request.speed - 1.0) * 100
+        else:
+            speed_percentage = 0
+        ssml_text = f"<speak version='1.0' xml:lang='{tts_request.language or self.default_language}'><voice xml:lang='{tts_request.language or self.default_language}' name='{tts_request.speaker}'><prosody rate='{speed_percentage:+.2f}%'>{tts_request.text}</prosody></voice></speak>"
 
         stream_resp = await self.stream_source.fetch_stream(
             encoded_ssml=ssml_text.encode("utf-8"),

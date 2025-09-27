@@ -52,7 +52,7 @@ class OpenAIGateway(SpeechGateway):
             "model": self.model,
             "voice": tts_request.speaker,
             "input": tts_request.text,
-            "speed": self.speed,
+            "speed": tts_request.speed or self.speed,
             "instructions": self.instructions,
             "response_format": x_audio_format
         }

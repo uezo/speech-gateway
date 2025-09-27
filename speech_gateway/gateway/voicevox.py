@@ -48,6 +48,10 @@ class VoicevoxGateway(SpeechGateway):
                     break
 
         audio_query = await self.stream_source.get_audio_query(speaker, tts_request.text)
+
+        if tts_request.speed:
+            audio_query["speedScale"] = tts_request.speed
+
         stream_resp = await self.stream_source.fetch_stream(
             audio_format=x_audio_format,
             speaker=speaker,
