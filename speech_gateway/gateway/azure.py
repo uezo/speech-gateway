@@ -28,29 +28,20 @@ class AzureGateway(SpeechGateway):
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/cognitiveservices/v1")
-        async def synthesis_handler(request: Request, x_audio_format: str = None):
-            if x_audio_format == "wav":
-                azure_audio_format = "riff-16khz-16bit-mono-pcm"
-            elif x_audio_format == "mp3":
-                azure_audio_format = "audio-16khz-32kbitrate-mono-mp3"
-            else:
-                azure_audio_format = request.headers["X-Microsoft-OutputFormat"]
-                if "pcm" in azure_audio_format:
-                    x_audio_format = "wav"
-                else:
-                    x_audio_format = "mp3"
-
+        async def synthesis_handler(request: Request):
+            azure_audio_format = request.headers["X-Microsoft-OutputFormat"]
+            audio_format = "wav" if "pcm" in azure_audio_format else "mp3"
             stream_resp = await self.stream_source.fetch_stream(
                 encoded_ssml=await request.body(),
                 azure_audio_format=azure_audio_format,
-                audio_format=x_audio_format
+                audio_format=audio_format
             )
-            return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
+            return StreamingResponse(stream_resp, media_type=f"audio/{audio_format}")
 
-    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
-        if x_audio_format == "wav":
+    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest):
+        if tts_request.audio_format == "wav":
             azure_audio_format = "riff-16khz-16bit-mono-pcm"
-        elif x_audio_format == "mp3":
+        elif tts_request.audio_format == "mp3":
             azure_audio_format = "audio-16khz-32kbitrate-mono-mp3"
 
         if tts_request.speed:
@@ -62,6 +53,6 @@ class AzureGateway(SpeechGateway):
         stream_resp = await self.stream_source.fetch_stream(
             encoded_ssml=ssml_text.encode("utf-8"),
             azure_audio_format=azure_audio_format,
-            audio_format=x_audio_format
+            audio_format=tts_request.audio_format
         )
-        return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
+        return StreamingResponse(stream_resp, media_type=f"audio/{tts_request.audio_format}")

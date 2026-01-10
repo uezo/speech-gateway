@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
+from typing import Any, Dict
 from fastapi import Request, APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
@@ -40,11 +41,22 @@ class UnifiedTTSRequest(BaseModel):
         example="aivisspeech",
     )
     language: str = Field(
-        None, 
+        None,
         description="The language. The corresponding text-to-speech service will be used. "
                     "Specify the language code in ISO639-1 format combined with the country code using a hyphen."
                     "If omitted, the default gateway will be used.",
         example="en-US",
+    )
+    audio_format: str = Field(
+        "wav",
+        description="The audio format of the synthesized speech (e.g., 'wav', 'mp3').",
+        example="wav",
+    )
+    extra_data: Dict[str, Any] = Field(
+        None,
+        description="Additional service-specific data that can be passed to the TTS service. "
+                    "The structure and supported keys depend on each speech service.",
+        example={"pitch": 1.0, "volume": 1.0},
     )
 
 
@@ -103,7 +115,7 @@ class SpeechGateway(ABC):
 
         return Response(content=r.content, status_code=r.status_code, headers=resp_headers)
 
-    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
+    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest):
         raise HTTPException(status_code=400, detail=f"This speech service doesn't support unified interface for now: {self.__class__.__name__}")
 
     def get_router(self) -> APIRouter:

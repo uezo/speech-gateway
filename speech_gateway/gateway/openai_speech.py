@@ -29,36 +29,28 @@ class OpenAIGateway(SpeechGateway):
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/audio/speech")
-        async def synthesis_handler(request: Request, x_audio_format: str = None):
+        async def synthesis_handler(request: Request):
             request_json = await request.json()
-
-            if x_audio_format:
-                if x_audio_format in ["mp3", "opus", "aac", "flac", "wav", "pcm"]:
-                    request_json["response_format"] = x_audio_format
-                else:
-                    # Set wave to convert to other format later
-                    request_json["response_format"] = "wav"
-            else:
-                x_audio_format = request_json.get("response_format", "mp3")
+            audio_format = request_json.get("response_format", "mp3")
 
             stream_resp = await self.stream_source.fetch_stream(
                 request_json=request_json,
-                audio_format=x_audio_format
+                audio_format=audio_format
             )
-            return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
+            return StreamingResponse(stream_resp, media_type=f"audio/{audio_format}")
 
-    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
+    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest):
         request_json = {
             "model": self.model,
             "voice": tts_request.speaker,
             "input": tts_request.text,
             "speed": tts_request.speed or self.speed,
             "instructions": self.instructions,
-            "response_format": x_audio_format
+            "response_format": tts_request.audio_format
         }
 
         stream_resp = await self.stream_source.fetch_stream(
-            audio_format=x_audio_format,
+            audio_format=tts_request.audio_format,
             request_json=request_json,
         )
-        return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
+        return StreamingResponse(stream_resp, media_type=f"audio/{tts_request.audio_format}")

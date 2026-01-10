@@ -31,17 +31,16 @@ class StyleBertVits2Gateway(SpeechGateway):
         async def get_voice_handler(request: Request):
             query_params = dict(request.query_params)
             filtered_params = {
-                k: v for k, v in query_params.items() if v is not None and k not in {"x_audio_format"}
+                k: v for k, v in query_params.items() if v is not None
             }
-            audio_format = query_params.get("x_audio_format", "wav")
 
             stream_resp = await self.stream_source.fetch_stream(
-                audio_format=audio_format,
+                audio_format="wav",
                 query_params=filtered_params,
             )
-            return StreamingResponse(stream_resp, media_type=f"audio/{audio_format}")
+            return StreamingResponse(stream_resp, media_type=f"audio/wav")
 
-    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
+    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest):
         # Basic params
         model_id, speaker_id = tts_request.speaker.split("-")
         query_params = {
@@ -62,12 +61,12 @@ class StyleBertVits2Gateway(SpeechGateway):
 
         # Additional params
         for k, v in dict(request.query_params).items():
-            if v is not None and k not in {"x_audio_format"}:
+            if v is not None:
                 query_params[k] = v
 
         stream_resp = await self.stream_source.fetch_stream(
-            audio_format=x_audio_format,
+            audio_format=tts_request.audio_format,
             query_params=query_params,
         )
 
-        return StreamingResponse(stream_resp, media_type=f"audio/{x_audio_format}")
+        return StreamingResponse(stream_resp, media_type=f"audio/{tts_request.audio_format}")

@@ -39,7 +39,7 @@ class UnifiedGateway(SpeechGateway):
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/tts")
-        async def post_tts(request: Request, tts_request: UnifiedTTSRequest, x_audio_format: str = "wav"):
+        async def post_tts(request: Request, tts_request: UnifiedTTSRequest):
             gateway = self.get_gateway(tts_request)
 
             if not gateway:
@@ -48,7 +48,7 @@ class UnifiedGateway(SpeechGateway):
             if not tts_request.speaker:
                 tts_request.speaker = self.default_speakers.get(gateway)
 
-            return await gateway.unified_tts_handler(request, tts_request, x_audio_format)
+            return await gateway.unified_tts_handler(request, tts_request)
 
     async def shutdown(self):
         pass
