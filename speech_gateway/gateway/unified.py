@@ -1,8 +1,9 @@
 from typing import Dict, List
 import httpx
 from fastapi import HTTPException
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from . import SpeechGateway, UnifiedTTSRequest
 from ..performance_recorder import PerformanceRecorder
 
@@ -28,11 +29,13 @@ class UnifiedGateway(SpeechGateway):
     def __init__(
         self,
         *,
+        api_key: str = None,
         default_gateway: SpeechGateway = None,
         default_language: str = "ja-JP",
         debug = False
     ):
         super().__init__(performance_recorder=DummyPerformanceRecorder(), debug=debug)
+        self.api_key = api_key
         self.service_map: Dict[str, SpeechGateway] = {}
         self.language_map: Dict[str, SpeechGateway] = {}
         self.default_speakers: Dict[SpeechGateway, str] = {}
@@ -58,14 +61,30 @@ class UnifiedGateway(SpeechGateway):
             return self.default_gateway
         return None
 
+    def api_key_auth(self, credentials: HTTPAuthorizationCredentials):
+        if not credentials or credentials.scheme.lower() != "bearer" or credentials.credentials != self.api_key:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing API Key",
+            )
+        return credentials.credentials
+
     def get_router(self) -> APIRouter:
         router = APIRouter()
         self.register_endpoint(router)
         return router
 
     def register_endpoint(self, router: APIRouter):
+        bearer_scheme = HTTPBearer(auto_error=False)
+
         @router.post("/tts")
-        async def post_tts(tts_request: UnifiedTTSRequest):
+        async def post_tts(
+            tts_request: UnifiedTTSRequest,
+            credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+        ):
+            if self.api_key:
+                self.api_key_auth(credentials)
+
             gateway = self.get_gateway(tts_request)
 
             if not gateway:
@@ -77,7 +96,13 @@ class UnifiedGateway(SpeechGateway):
             return await gateway.unified_tts_handler(tts_request)
 
         @router.delete("/cache")
-        async def delete_cache(service_name: str):
+        async def delete_cache(
+            service_name: str,
+            credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+        ):
+            if self.api_key:
+                self.api_key_auth(credentials)
+
             if gateway := self.service_map.get(service_name):
                 await gateway.cache_storage.clear_all_cache()
                 return JSONResponse(content={"result": f"Cache cleard for {service_name}"})
