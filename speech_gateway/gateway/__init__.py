@@ -168,8 +168,6 @@ class SpeechGateway(ABC):
                 )
                 return cache_resp
 
-        print(body)
-
         r = await self.http_client.request(
             request.method,
             url,
