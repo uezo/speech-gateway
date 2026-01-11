@@ -12,21 +12,17 @@ A reverse proxy server that enhances speech synthesis with essential, extensible
 - 🌟 **Unified Interface**: Use various text-to-speech services through a unified interface — now with multi-language support!🌏
 
 
-## 🎁 Installation
+## 🐍 Start with Python
+
+Install `speech-gateway` from PyPI.
 
 ```sh
 pip install speech-gateway
 ```
 
-To use MP3 format conversion, you also need to install ffmpeg to your computer.
-
-
-## 🚀 Start server
-
 Create a script like the following example:
 
 ```python
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from speech_gateway.gateway.voicevox import VoicevoxGateway
 from speech_gateway.gateway.sbv2 import StyleBertVits2Gateway
@@ -41,22 +37,48 @@ app = FastAPI()
 # Add gateways to app
 app.include_router(voicevox_gateway.get_router(), prefix="/voicevox")
 app.include_router(sbv2_gateway.get_router(), prefix="/sbv2")
-
-# On app down
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
-    await voicevox_gateway.shutdown()
-    await sbv2_gateway.shutdown()
 ```
 
 Then, run it with uvicorn:
 
-```
+```sh
 uvicorn run:app --port 8000
 ```
 
 In this example, you can access VOICEVOX at http://127.0.0.1:8000/voicevox and Style-Bert-VITS2 at http://127.0.0.1:8000/sbv2 with cache functionality.
+
+
+**NOTE**: To use MP3 format conversion, you also need to install ffmpeg to your computer.
+
+
+## 🐳 Start with Docker
+
+Get resources and move into it.
+
+```sh
+git clone https://github.com/uezo/speech-gateway.git
+cd speech-gateway/docker
+```
+
+Edit `.env`.
+
+```sh
+nano .env
+```
+
+**[!! Linux Only !!]** Make directories and set permissions.
+
+```sh
+sh init-data.sh
+```
+
+Start services.
+
+```sh
+docker compose up -d
+```
+
+Try Unified API at http://127.0.0.1:8000/docs .
 
 
 ## 🌟 Unified Interface
@@ -179,7 +201,7 @@ with open("tts.wav", "wb") as f:
 ```
 
 
-### 🔒 Authentication
+### Authentication
 
 You can protect UnifiedGateway with API key-based authentication.
 

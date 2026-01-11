@@ -1,17 +1,47 @@
 services:
+  db:
+    image: postgres:16
+    env_file:
+      - .env
+    ports:
+      - "${SPGW_DB_PORT}:5432"
+    volumes:
+      - ${DATA_PATH:-../data}/postgres:/var/lib/postgresql/data
+      - ./db/init-db.sh:/docker-entrypoint-initdb.d/speech-gateway-init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  pgadmin4:
+    image: dpage/pgadmin4:8.14
+    env_file:
+      - .env
+    ports:
+      - "${PGADMIN_PORT}:80"
+    volumes:
+      - ${DATA_PATH:-../data}/pgadmin:/var/lib/pgadmin
+      - ./pgadmin/pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   app:
-    container_name: spgw-app
     build:
       context: .
       dockerfile: Dockerfile.app
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=postgresql://${SPGW_DB_USER}:${SPGW_DB_PASSWORD}@db:5432/${SPGW_DB_NAME}
     ports:
-      - "${PORT_SPGW}:8000"
+      - "${SPGW_PORT}:8000"
+    command: ["uvicorn", "run:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     volumes:
-      - spgw-app-cache:/app/cache
+      - ./app:/app  # Comment out for production (use code in image)
+      - ${DATA_PATH:-../data}/app:/data
     depends_on:
       db:
         condition: service_healthy
@@ -22,62 +52,3 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-
-  db:
-    container_name: spgw-db
-    image: postgres:16
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - SPGW_DB_NAME=${SPGW_DB_NAME}
-      - SPGW_DB_USER=${SPGW_DB_USER}
-      - SPGW_DB_PASSWORD=${SPGW_DB_PASSWORD}
-    ports:
-      - "${PORT_DB}:5432"
-    volumes:
-      - spgw-postgres-data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${SPGW_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-
-  pgadmin4:
-    container_name: spgw-pgadmin4
-    image: dpage/pgadmin4:8.14
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_SERVER_MODE: "True"
-    ports:
-      - "${PORT_PGADMIN}:80"
-    volumes:
-      - spgw-pgadmin-data:/var/lib/pgadmin
-      - ./pgadmin-servers.json:/pgadmin4/servers.json
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
-volumes:
-  spgw-postgres-data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${DATA_PATH:-./data}/postgres
-  spgw-pgadmin-data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${DATA_PATH:-./data}/pgadmin
-  spgw-app-cache:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${DATA_PATH:-./data}/cache
