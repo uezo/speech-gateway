@@ -179,6 +179,18 @@ with open("tts.wav", "wb") as f:
 ```
 
 
+### 🔒 Authentication
+
+You can protect UnifiedGateway with API key-based authentication.
+
+```python
+# Create unified gateway with API key
+unified_gateway = UnifiedGateway(api_key="MyApiKey")
+```
+
+To access a server with `api_key` configured, set the API key in the Authorization header like `Authorization: Bearer MyApiKey`.
+
+
 ## 🛠️ Customization
 
 You can add new speech synthesis services to relay.
