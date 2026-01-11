@@ -1,13 +1,38 @@
 from typing import Dict, List
 import httpx
 from fastapi import HTTPException
-from fastapi import Request, APIRouter
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from . import SpeechGateway, UnifiedTTSRequest
+from ..performance_recorder import PerformanceRecorder
+
+
+class DummyPerformanceRecorder(PerformanceRecorder):
+    def record(
+        self,
+        *,
+        process_id: str,
+        source: str = None,
+        text: str = None,
+        audio_format: str = None,
+        cached: int = 0,
+        elapsed: float = None,
+    ):
+        pass
+
+    def close(self):
+        pass
 
 
 class UnifiedGateway(SpeechGateway):
-    def __init__(self, *, default_gateway: SpeechGateway = None, default_language: str = "ja-JP", debug = False):
-        super().__init__(debug=debug)
+    def __init__(
+        self,
+        *,
+        default_gateway: SpeechGateway = None,
+        default_language: str = "ja-JP",
+        debug = False
+    ):
+        super().__init__(performance_recorder=DummyPerformanceRecorder(), debug=debug)
         self.service_map: Dict[str, SpeechGateway] = {}
         self.language_map: Dict[str, SpeechGateway] = {}
         self.default_speakers: Dict[SpeechGateway, str] = {}
@@ -51,6 +76,14 @@ class UnifiedGateway(SpeechGateway):
 
             return await gateway.unified_tts_handler(tts_request)
 
+        @router.delete("/cache")
+        async def delete_cache(service_name: str):
+            if gateway := self.service_map.get(service_name):
+                await gateway.cache_storage.clear_all_cache()
+                return JSONResponse(content={"result": f"Cache cleard for {service_name}"})
+            else:
+                return JSONResponse(content={"error": f"Gateway not found: {service_name}"}, status_code=404)
+
     def from_tts_request(self, tts_request: UnifiedTTSRequest) -> httpx.Request:
         pass
 
@@ -58,4 +91,8 @@ class UnifiedGateway(SpeechGateway):
         pass
 
     async def shutdown(self):
-        pass
+        for _, gw in self.service_map.items():
+            try:
+                await gw.shutdown()
+            except:
+                pass
