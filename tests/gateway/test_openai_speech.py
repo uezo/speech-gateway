@@ -3,12 +3,14 @@ import pytest
 import httpx
 
 SPEAKER = "alloy"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 @pytest.mark.asyncio
 async def test_openai_speech(random_text, mp3_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/openai/audio/speech",
+        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
         json={
             "model": "tts-1",
             "voice": "alloy",
@@ -25,6 +27,7 @@ async def test_openai_speech(random_text, mp3_checker, audio_transcriber):
 async def test_openai_speech_wav(random_text, wave_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/openai/audio/speech",
+        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
         json={
             "model": "tts-1",
             "voice": "alloy",
@@ -42,6 +45,7 @@ async def test_openai_speech_wav(random_text, wave_checker, audio_transcriber):
 async def test_openai_speech_mp3(random_text, mp3_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/openai/audio/speech",
+        headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
         json={
             "model": "tts-1",
             "voice": "alloy",

@@ -1,5 +1,4 @@
 import asyncio
-from typing import AsyncIterator
 from . import FormatConverter, FormatConverterError
 
 
@@ -9,7 +8,7 @@ class MP3Converter(FormatConverter):
         self.bitrate = bitrate
         self.output_chunksize = output_chunksize
 
-    async def convert(self, input_stream: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    async def convert(self, input_bytes: bytes) -> bytes:
         try:
             ffmpeg_proc = await asyncio.create_subprocess_exec(
                 self.ffmpeg_path,
@@ -23,30 +22,14 @@ class MP3Converter(FormatConverter):
                 stderr=asyncio.subprocess.PIPE
             )
 
-            async def feed_ffmpeg_stdin():
-                try:
-                    async for chunk in input_stream:
-                        ffmpeg_proc.stdin.write(chunk)
-                        await ffmpeg_proc.stdin.drain()
-                    ffmpeg_proc.stdin.close()
-
-                except Exception as ex:
-                    ffmpeg_proc.stdin.close()
-                    raise FormatConverterError(f"Error feeding data to ffmpeg: {str(ex)}")
-
-            asyncio.create_task(feed_ffmpeg_stdin())
-
-            while True:
-                chunk = await ffmpeg_proc.stdout.read(self.output_chunksize)
-                if not chunk:
-                    break
-                yield chunk
-
-            await ffmpeg_proc.wait()
+            stdout, stderr = await ffmpeg_proc.communicate(input=input_bytes)
 
             if ffmpeg_proc.returncode != 0:
-                stderr = await ffmpeg_proc.stderr.read()
                 raise FormatConverterError(f"FFmpeg conversion error: {stderr.decode('utf-8')}")
 
+            return stdout
+
+        except FormatConverterError:
+            raise
         except Exception as ex:
             raise FormatConverterError(f"Error during MP3 conversion: {str(ex)}")

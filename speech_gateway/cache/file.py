@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Union
 import aiofiles
-from . import CacheStorage, CacheStorageError
+from . import Cache, CacheStorage, CacheStorageError
 
 
 class FileCacheStorage(CacheStorage):
@@ -21,24 +21,17 @@ class FileCacheStorage(CacheStorage):
 
         return True
 
-    async def fetch_cache_stream(self, cache_key: str) -> AsyncIterator[bytes]:
-        try:
-            file_path = self.cache_dir / cache_key
-            async with aiofiles.open(file_path, mode="rb") as file:
-                while chunk := await file.read(1024):
-                    yield chunk
+    async def get_cache(self, cache_key: str) -> Union[Cache, None]:
+        file_path = self.cache_dir / cache_key
+        if not file_path.exists():
+            return None
+        return Cache(cache_key=cache_key, path=file_path)
 
-        except Exception as ex:
-            raise IOError(f"Error reading file {file_path}: {str(ex)}")
-
-    async def write_cache(self, input_stream: AsyncIterator[bytes], cache_key: str) -> AsyncIterator[bytes]:
+    async def save_cache(self, data: bytes, cache_key: str):
         file_path = self.cache_dir / cache_key
         try:
             async with aiofiles.open(file_path, "wb") as file:
-                async for chunk in input_stream:
-                    await file.write(chunk)
-                    await file.flush()
-                    yield chunk
+                await file.write(data)
 
         except Exception as ex:
             # Clean up partial file if it was created

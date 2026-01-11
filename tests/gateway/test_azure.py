@@ -1,6 +1,8 @@
+import os
 import pytest
 import httpx
 
+AZURE_API_KEY = os.getenv("AZURE_API_KEY")
 
 @pytest.mark.asyncio
 async def test_azure(random_text, wave_checker, audio_transcriber):
@@ -9,7 +11,8 @@ async def test_azure(random_text, wave_checker, audio_transcriber):
         url="http://127.0.0.1:8000/azure/cognitiveservices/v1",
         headers={
             "X-Microsoft-OutputFormat": "riff-16khz-16bit-mono-pcm",
-            "Content-Type": "application/ssml+xml"
+            "Content-Type": "application/ssml+xml",
+            "Ocp-Apim-Subscription-Key": AZURE_API_KEY
         },
         data=ssml_text.encode("utf-8")
     )

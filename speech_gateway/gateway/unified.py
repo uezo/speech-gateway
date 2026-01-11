@@ -1,4 +1,5 @@
 from typing import Dict, List
+import httpx
 from fastapi import HTTPException
 from fastapi import Request, APIRouter
 from . import SpeechGateway, UnifiedTTSRequest
@@ -6,7 +7,7 @@ from . import SpeechGateway, UnifiedTTSRequest
 
 class UnifiedGateway(SpeechGateway):
     def __init__(self, *, default_gateway: SpeechGateway = None, default_language: str = "ja-JP", debug = False):
-        super().__init__(stream_source=None, debug=debug)
+        super().__init__(debug=debug)
         self.service_map: Dict[str, SpeechGateway] = {}
         self.language_map: Dict[str, SpeechGateway] = {}
         self.default_speakers: Dict[SpeechGateway, str] = {}
@@ -39,7 +40,7 @@ class UnifiedGateway(SpeechGateway):
 
     def register_endpoint(self, router: APIRouter):
         @router.post("/tts")
-        async def post_tts(request: Request, tts_request: UnifiedTTSRequest):
+        async def post_tts(tts_request: UnifiedTTSRequest):
             gateway = self.get_gateway(tts_request)
 
             if not gateway:
@@ -48,7 +49,13 @@ class UnifiedGateway(SpeechGateway):
             if not tts_request.speaker:
                 tts_request.speaker = self.default_speakers.get(gateway)
 
-            return await gateway.unified_tts_handler(request, tts_request)
+            return await gateway.unified_tts_handler(tts_request)
+
+    def from_tts_request(self, tts_request: UnifiedTTSRequest) -> httpx.Request:
+        pass
+
+    def to_tts_request(self, body: bytes, headers: dict, params: dict) -> UnifiedTTSRequest:
+        pass
 
     async def shutdown(self):
         pass

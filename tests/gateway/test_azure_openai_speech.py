@@ -1,16 +1,20 @@
-import os
 import pytest
+import os
 import httpx
 
 SPEAKER = "alloy"
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_BASE_URL = os.getenv("AZURE_OPENAI_BASE_URL")
+AZURE_OPENAI_MODEL = os.getenv("AZURE_OPENAI_MODEL")
 
 
 @pytest.mark.asyncio
 async def test_openai_speech(random_text, mp3_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/azure_openai/audio/speech",
+        headers={"api-key": AZURE_OPENAI_API_KEY},
         json={
-            "model": "gpt-4o-mini-tts",
+            "model": AZURE_OPENAI_MODEL,
             "voice": "alloy",
             "input": random_text,
             "speed": 1.0,
@@ -25,8 +29,9 @@ async def test_openai_speech(random_text, mp3_checker, audio_transcriber):
 async def test_openai_speech_wav(random_text, wave_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/azure_openai/audio/speech",
+        headers={"api-key": AZURE_OPENAI_API_KEY},
         json={
-            "model": "gpt-4o-mini-tts",
+            "model": AZURE_OPENAI_MODEL,
             "voice": "alloy",
             "input": random_text,
             "speed": 1.0,
@@ -42,8 +47,9 @@ async def test_openai_speech_wav(random_text, wave_checker, audio_transcriber):
 async def test_openai_speech_mp3(random_text, mp3_checker, audio_transcriber):
     resp = httpx.post(
         "http://127.0.0.1:8000/azure_openai/audio/speech",
+        headers={"api-key": AZURE_OPENAI_API_KEY},
         json={
-            "model": "gpt-4o-mini-tts",
+            "model": AZURE_OPENAI_MODEL,
             "voice": "alloy",
             "input": random_text,
             "speed": 1.0,

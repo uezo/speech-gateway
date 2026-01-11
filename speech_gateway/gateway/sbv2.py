@@ -1,47 +1,44 @@
-from typing import Dict
-from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+from typing import Dict, Any
 from . import SpeechGateway, UnifiedTTSRequest
-from ..cache.file import FileCacheStorage
-from ..converter.mp3 import MP3Converter
-from ..performance_recorder import PerformanceRecorder, SQLitePerformanceRecorder
-from ..source.sbv2 import StyleBertVits2StreamSource
+from ..performance_recorder import PerformanceRecorder
+from ..cache import CacheStorage
+from ..converter import FormatConverter
+from ..performance_recorder import PerformanceRecorder
 
 
 class StyleBertVits2Gateway(SpeechGateway):
-    def __init__(self, *, stream_source: StyleBertVits2StreamSource = None, base_url: str = None, cache_dir: str = None, performance_recorder: PerformanceRecorder = None, style_mapper: Dict[str, Dict[str, str]] = None, debug = False):
-        self.stream_source: StyleBertVits2StreamSource = None
-        if stream_source:
-            super().__init__(stream_source=stream_source, debug=debug)
-        else:
-            super().__init__(
-                stream_source=StyleBertVits2StreamSource(
-                    base_url=base_url or "http://127.0.0.1:5000",
-                    cache_storage=FileCacheStorage(cache_dir=cache_dir or "sbv2_cache"),
-                    format_converters={"mp3": MP3Converter(bitrate="64k")},
-                    performance_recorder=performance_recorder or SQLitePerformanceRecorder(),
-                    debug=debug
-                ),
-                debug=debug
-            )
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        style_mapper: dict = None,
+        cache_dir: str = "sbv2_cache",
+        cache_storage: CacheStorage = None,
+        format_converters: Dict[str, FormatConverter] = None,
+        max_connections: int = 100,
+        max_keepalive_connections: int = 20,
+        timeout: float = 10.0,
+        follow_redirects: bool = False,
+        performance_recorder: PerformanceRecorder = None,
+        debug: bool = False
+    ):
+        super().__init__(
+            base_url=base_url,
+            original_tts_method="GET",
+            original_tts_path="/voice",
+            cache_dir=cache_dir,
+            cache_storage=cache_storage,
+            format_converters=format_converters,
+            max_connections=max_connections,
+            max_keepalive_connections=max_keepalive_connections,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            performance_recorder=performance_recorder,
+            debug=debug
+        )
         self.style_mapper = style_mapper or {}
 
-    def register_endpoint(self, router: APIRouter):
-        @router.get("/voice")
-        async def get_voice_handler(request: Request):
-            query_params = dict(request.query_params)
-            filtered_params = {
-                k: v for k, v in query_params.items() if v is not None
-            }
-
-            stream_resp = await self.stream_source.fetch_stream(
-                audio_format="wav",
-                query_params=filtered_params,
-            )
-            return StreamingResponse(stream_resp, media_type=f"audio/wav")
-
-    async def unified_tts_handler(self, request: Request, tts_request: UnifiedTTSRequest):
-        # Basic params
+    async def from_tts_request(self, tts_request: UnifiedTTSRequest) -> Dict[str, Any]:
         model_id, speaker_id = tts_request.speaker.split("-")
         query_params = {
             "text": tts_request.text,
@@ -60,13 +57,27 @@ class StyleBertVits2Gateway(SpeechGateway):
                     break
 
         # Additional params
-        for k, v in dict(request.query_params).items():
-            if v is not None:
-                query_params[k] = v
+        if tts_request.extra_data:
+            for k, v in tts_request.extra_data.items():
+                if v is not None:
+                    query_params[k] = v
 
-        stream_resp = await self.stream_source.fetch_stream(
-            audio_format=tts_request.audio_format,
-            query_params=query_params,
+        return {
+            "method": self.original_tts_method,
+            "url": self.base_url + self.original_tts_path,
+            "params": query_params
+        }
+
+    async def to_tts_request(self, body: bytes, headers: dict, params: dict) -> UnifiedTTSRequest:
+        tts_request = UnifiedTTSRequest(
+            text=params.get("text"),
+            speaker=f"{params.get('model_id', '0')}-{params.get('speaker_id', '0')}",
+            audio_format="wav",
         )
 
-        return StreamingResponse(stream_resp, media_type=f"audio/{tts_request.audio_format}")
+        if style := params.get("style"):
+            tts_request.style = style
+        if speed := params.get("speed"):
+            tts_request.speed = speed
+
+        return tts_request

@@ -1,7 +1,6 @@
 import audioop
 import io
 import struct
-from typing import AsyncIterator
 import wave
 from . import FormatConverter, FormatConverterError
 
@@ -31,12 +30,9 @@ class MuLawConverter(FormatConverter):
         )
         return header
 
-    async def convert(self, input_stream: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    async def convert(self, input_bytes: bytes) -> bytes:
         try:
-            # Load whole wave data
-            wav_data = b""
-            async for chunk in input_stream:
-                wav_data += chunk
+            wav_data = input_bytes
 
             if self.to_linear16:
                 wav_data = self.to_linear16(wav_data)
@@ -76,8 +72,7 @@ class MuLawConverter(FormatConverter):
                 header = self.create_au_header(len(mulaw_data), self.rate, 1)
                 mulaw_data = header + mulaw_data
 
-            # Return whole data at once
-            yield mulaw_data
+            return mulaw_data
 
         except Exception as ex:
             raise FormatConverterError(f"Error during Mu-Law conversion: {str(ex)}")

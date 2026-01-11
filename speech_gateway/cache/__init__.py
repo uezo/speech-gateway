@@ -1,5 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
+from typing import AsyncIterator, Any, Union
+
+
+class Cache:
+    def __init__(self, cache_key: str, path: str = None, url: str = None, data: Any = None, mime_type: str = None):
+        self.cache_key = cache_key
+        self.path = path
+        self.url = url
+        self.data = data
+        self.mime_type = mime_type
 
 
 class CacheStorage(ABC):
@@ -8,11 +17,11 @@ class CacheStorage(ABC):
         pass
 
     @abstractmethod
-    async def fetch_cache_stream(self, cache_key: str) -> AsyncIterator[bytes]:
+    async def get_cache(self, cache_key: str) -> Union[Cache, None]:
         pass
 
     @abstractmethod
-    async def write_cache(self, input_stream: AsyncIterator[bytes], cache_key: str) -> AsyncIterator[bytes]:
+    async def save_cache(self, data: bytes, cache_key: str):
         pass
 
 

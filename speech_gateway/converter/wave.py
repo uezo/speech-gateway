@@ -1,7 +1,6 @@
 import audioop
 import io
 import wave
-from typing import AsyncIterator
 from . import FormatConverter, FormatConverterError
 
 
@@ -44,13 +43,9 @@ class WaveConverter(FormatConverter):
 
         return output_io.getvalue()
 
-    async def convert(self, input_stream: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    async def convert(self, input_bytes: bytes) -> bytes:
         try:
-            wav_data = b""
-            async for chunk in input_stream:
-                wav_data += chunk
-
-            yield self.convert_wave_bytes(wav_data, self.output_sample_rate, self.output_sample_width)
+            return self.convert_wave_bytes(input_bytes, self.output_sample_rate, self.output_sample_width)
 
         except Exception as ex:
-            raise FormatConverterError(f"Error during Mu-Law conversion: {str(ex)}")
+            raise FormatConverterError(f"Error during Wave conversion: {str(ex)}")

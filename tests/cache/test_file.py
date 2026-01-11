@@ -36,37 +36,29 @@ async def test_has_cache(file_cache_storage, temp_cache_dir):
 
 
 @pytest.mark.asyncio
-async def test_fetch_cache_stream(file_cache_storage, temp_cache_dir):
-    # Test fetch_cache_stream method
+async def test_get_cache(file_cache_storage, temp_cache_dir):
+    # Test get_cache method
     cache_key = "test_file"
     file_path = temp_cache_dir / cache_key
     content = b"This is test content."
     file_path.write_bytes(content)
 
-    result = b""
-    async for chunk in file_cache_storage.fetch_cache_stream(cache_key):
-        result += chunk
+    result = await file_cache_storage.get_cache(cache_key)
 
-    assert result == content
+    assert result.path == file_path
+    assert file_path.read_bytes() == content
 
 
 @pytest.mark.asyncio
-async def test_write_cache(file_cache_storage, temp_cache_dir):
-    # Test write_cache method
+async def test_save_cache(file_cache_storage, temp_cache_dir):
+    # Test save_cache method
     cache_key = "test_file"
     file_path = temp_cache_dir / cache_key
 
-    async def input_stream():
-        yield b"Part 1 "
-        yield b"Part 2"
-
-    result = b""
-    async for chunk in file_cache_storage.write_cache(input_stream(), cache_key):
-        result += chunk
+    await file_cache_storage.save_cache(b"Part 1 Part 2", cache_key)
 
     assert file_path.exists()
     assert file_path.read_bytes() == b"Part 1 Part 2"
-    assert result == b"Part 1 Part 2"
 
 
 @pytest.mark.asyncio

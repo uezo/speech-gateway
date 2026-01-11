@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
 
 
 class FormatConverter(ABC):
     @abstractmethod
-    async def convert(self, input_stream: AsyncIterator[bytes]) -> AsyncIterator[bytes]:
+    async def convert(self, input_bytes: bytes) -> bytes:
         pass
 
 

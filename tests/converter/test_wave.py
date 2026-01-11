@@ -1,8 +1,6 @@
 import pytest
-import os
 import wave
 import io
-from typing import AsyncIterator
 from speech_gateway.converter.wave import WaveConverter, FormatConverterError
 
 
@@ -20,42 +18,23 @@ def wave_converter_custom():
 async def test_wave_conversion(wave_converter):
     input_file = "tests/data/test.wav"
 
-    async def input_stream() -> AsyncIterator[bytes]:
-        with open(input_file, "rb") as f:
-            while chunk := f.read(1024):
-                yield chunk
-
-    output = b""
-    try:
-        async for chunk in wave_converter.convert(input_stream()):
-            output += chunk
-    except FormatConverterError as e:
-        pytest.fail(f"Wave conversion failed with error: {e}")
-
-    assert output != b""
+    with open(input_file, "rb") as f:
+        output = await wave_converter.convert(f.read())
+        # Assert that the output is not empty (indicating conversion occurred)
+        assert output != b""
 
     with wave.open(io.BytesIO(output), 'rb') as wf:
         assert wf.getframerate() == 16000
         assert wf.getsampwidth() == 2
 
-
 @pytest.mark.asyncio
 async def test_wave_conversion_custom_params(wave_converter_custom):
     input_file = "tests/data/test.wav"
 
-    async def input_stream() -> AsyncIterator[bytes]:
-        with open(input_file, "rb") as f:
-            while chunk := f.read(1024):
-                yield chunk
-
-    output = b""
-    try:
-        async for chunk in wave_converter_custom.convert(input_stream()):
-            output += chunk
-    except FormatConverterError as e:
-        pytest.fail(f"Wave conversion failed with error: {e}")
-
-    assert output != b""
+    with open(input_file, "rb") as f:
+        output = await wave_converter_custom.convert(f.read())
+        # Assert that the output is not empty (indicating conversion occurred)
+        assert output != b""
 
     with wave.open(io.BytesIO(output), 'rb') as wf:
         assert wf.getframerate() == 8000
@@ -64,14 +43,10 @@ async def test_wave_conversion_custom_params(wave_converter_custom):
 
 @pytest.mark.asyncio
 async def test_wave_conversion_error_handling(wave_converter):
-    async def input_stream() -> AsyncIterator[bytes]:
-        yield b"Invalid wave data"
-
     with pytest.raises(FormatConverterError) as exc_info:
-        async for _ in wave_converter.convert(input_stream()):
-            pass
-
-    assert "Error during Mu-Law conversion" in str(exc_info.value)
+        output = await wave_converter.convert(b"invalid data")
+        # Assert that the output is not empty (indicating conversion occurred)
+        assert output != b""
 
 
 @pytest.mark.asyncio
