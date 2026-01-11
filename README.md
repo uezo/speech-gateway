@@ -30,7 +30,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from speech_gateway.gateway.voicevox import VoicevoxGateway
 from speech_gateway.gateway.sbv2 import StyleBertVits2Gateway
-from speech_gateway.gateway.nijivoice import NijiVoiceGateway
 
 # Create gateways
 voicevox_gateway = VoicevoxGateway(base_url="http://127.0.0.1:50021", debug=True)
@@ -49,7 +48,6 @@ async def lifespan(app: FastAPI):
     yield
     await voicevox_gateway.shutdown()
     await sbv2_gateway.shutdown()
-    await nijivoice_gateway.shutdown()
 ```
 
 Then, run it with uvicorn:
