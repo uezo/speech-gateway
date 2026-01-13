@@ -1,10 +1,9 @@
 from typing import Dict, List
 import httpx
-from fastapi import HTTPException
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from . import SpeechGateway, UnifiedTTSRequest
+from . import SpeechGateway, UnifiedTTSRequest, UnifiedTTSResponse
 from ..performance_recorder import PerformanceRecorder
 
 
@@ -60,6 +59,16 @@ class UnifiedGateway(SpeechGateway):
         elif self.default_gateway:
             return self.default_gateway
         return None
+
+    async def tts(self, tts_request: UnifiedTTSRequest) -> UnifiedTTSResponse:
+        gateway = self.get_gateway(tts_request)
+        if not gateway:
+            raise Exception("No gateways found.")
+
+        if not tts_request.speaker:
+            tts_request.speaker = self.default_speakers.get(gateway)
+
+        return await gateway.tts(tts_request)
 
     def api_key_auth(self, credentials: HTTPAuthorizationCredentials):
         if not credentials or credentials.scheme.lower() != "bearer" or credentials.credentials != self.api_key:

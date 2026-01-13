@@ -213,6 +213,40 @@ unified_gateway = UnifiedGateway(api_key="MyApiKey")
 To access a server with `api_key` configured, set the API key in the Authorization header like `Authorization: Bearer MyApiKey`.
 
 
+## 🧩 Python SDK
+
+When your client application is limited to a single Python application, you can use SpeechGateway directly as a Python library without running a proxy server.
+
+```python
+import asyncio
+from speech_gateway.gateway.unified import UnifiedGateway
+from speech_gateway.gateway.voicevox import VoicevoxGateway
+from speech_gateway.gateway import UnifiedTTSRequest
+
+async def main():
+    # Create gateways
+    voicevox_gateway = VoicevoxGateway(base_url="http://127.0.0.1:50021")
+
+    # Create UnifiedGateway and add gateways
+    unified_gateway = UnifiedGateway()
+    unified_gateway.add_gateway("voicevox", voicevox_gateway, default_speaker="46", default=True)
+
+    # Call tts directly
+    response = await unified_gateway.tts(UnifiedTTSRequest(text="こんにちは"))
+
+    # Save audio
+    with open("output.wav", "wb") as f:
+        f.write(response.audio_data)
+
+    # Cleanup
+    await unified_gateway.shutdown()
+
+asyncio.run(main())
+```
+
+This approach is useful when integrating speech synthesis into an existing Python application without the overhead of HTTP communication.
+
+
 ## 🛠️ Customization
 
 You can add new speech synthesis services to relay.

@@ -74,3 +74,43 @@ async def test_voicevox_unified_mp3(random_text, mp3_checker, audio_transcriber)
     audio_data = resp.content
     assert mp3_checker(audio_data)
     assert "音声合成" in audio_transcriber(audio_data, "mp3")
+
+
+# SDK mode tests (direct tts method call)
+@pytest.mark.asyncio
+async def test_unified_gateway_tts_sdk(random_text, wave_checker, audio_transcriber):
+    voicevox_gateway = VoicevoxGateway(base_url=VOICEVOX_URL, cache_dir=None, debug=True)
+
+    unified_gateway = UnifiedGateway(debug=True)
+    unified_gateway.add_gateway("voicevox", voicevox_gateway, default_speaker="46", default=True)
+
+    try:
+        response = await unified_gateway.tts(UnifiedTTSRequest(text=random_text))
+        assert wave_checker(response.audio_data)
+        assert "音声合成" in audio_transcriber(response.audio_data, "wav")
+    finally:
+        await unified_gateway.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_voicevox_gateway_tts_sdk(random_text, wave_checker, audio_transcriber):
+    voicevox_gateway = VoicevoxGateway(base_url=VOICEVOX_URL, cache_dir=None, debug=True)
+
+    try:
+        response = await voicevox_gateway.tts(UnifiedTTSRequest(text=random_text, speaker="46"))
+        assert wave_checker(response.audio_data)
+        assert "音声合成" in audio_transcriber(response.audio_data, "wav")
+    finally:
+        await voicevox_gateway.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_voicevox_gateway_tts_sdk_mp3(random_text, mp3_checker, audio_transcriber):
+    voicevox_gateway = VoicevoxGateway(base_url=VOICEVOX_URL, cache_dir=None, debug=True)
+
+    try:
+        response = await voicevox_gateway.tts(UnifiedTTSRequest(text=random_text, speaker="46", audio_format="mp3"))
+        assert mp3_checker(response.audio_data)
+        assert "音声合成" in audio_transcriber(response.audio_data, "mp3")
+    finally:
+        await voicevox_gateway.shutdown()

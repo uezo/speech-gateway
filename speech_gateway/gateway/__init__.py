@@ -2,13 +2,14 @@ from abc import ABC, abstractmethod
 import hashlib
 import logging
 from time import time
-from typing import Any, Dict
+from typing import Any, Dict, Union, Optional
 from uuid import uuid4
+import aiofiles
 import httpx
 from fastapi import Request, APIRouter
 from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel, Field
-from ..cache import CacheStorage, FileCacheStorage
+from ..cache import Cache, CacheStorage, FileCacheStorage
 from ..converter import FormatConverter, MP3Converter
 from ..performance_recorder import PerformanceRecorder, SQLitePerformanceRecorder
 
@@ -63,6 +64,11 @@ class UnifiedTTSRequest(BaseModel):
                     "The structure and supported keys depend on each speech service.",
         example={"pitch": 1.0, "volume": 1.0},
     )
+
+
+class UnifiedTTSResponse(BaseModel):
+    audio_data: bytes
+    media_type: Optional[str] = None
 
 
 class SpeechGateway(ABC):
@@ -210,16 +216,17 @@ class SpeechGateway(ABC):
 
         return None
 
-    async def unified_tts_handler(self, tts_request: UnifiedTTSRequest):
+    async def _tts(self, tts_request: UnifiedTTSRequest) -> Union[UnifiedTTSResponse, Cache]:
         start_time = time()
         cache_key = self.get_cache_key(tts_request)
 
-        if cache_resp := await self.get_cache_response(cache_key):
-            self.performance_recorder.record(
-                process_id=cache_key, source=self.__class__.__name__, text=tts_request.text,
-                audio_format=tts_request.audio_format, cached=1, elapsed=time() - start_time
-            )
-            return cache_resp
+        if self.cache_storage:
+            if cache := await self.cache_storage.get_cache(cache_key):
+                self.performance_recorder.record(
+                    process_id=cache_key, source=self.__class__.__name__, text=tts_request.text,
+                    audio_format=tts_request.audio_format, cached=1, elapsed=time() - start_time
+                )
+                return cache
 
         httpx_response = await self.http_client.request(
             **await self.from_tts_request(tts_request)
@@ -241,7 +248,43 @@ class SpeechGateway(ABC):
             audio_format=tts_request.audio_format, cached=0, elapsed=time() - start_time
         )
 
-        return Response(content=audio_data, media_type=f"audio/{tts_request.audio_format}")
+        return UnifiedTTSResponse(audio_data=audio_data, media_type=f"audio/{tts_request.audio_format}")
+
+    async def unified_tts_handler(self, tts_request: UnifiedTTSRequest):
+        resp = await self._tts(tts_request)
+
+        if isinstance(resp, Cache):
+            if resp.path:
+                cache_resp = FileResponse(path=resp.path)
+            elif resp.url:
+                _resp = await self.http_client.get(resp.url)
+                cache_resp = Response(content=_resp.content, media_type=_resp.headers.get("content-type"))
+            else:
+                cache_resp = Response(content=resp.data, media_type=resp.mime_type)
+            return cache_resp
+
+        return Response(content=resp.audio_data, media_type=resp.media_type)
+
+    async def tts(self, tts_request: UnifiedTTSRequest) -> UnifiedTTSResponse:
+        resp = await self._tts(tts_request)
+
+        if isinstance(resp, Cache):
+            media_type = resp.mime_type
+            if resp.path:
+                async with aiofiles.open(resp.path, "rb") as f:
+                    audio_data = await f.read()
+                media_type = resp.mime_type
+            elif resp.url:
+                _resp = await self.http_client.get(resp.url)
+                audio_data = _resp.content
+            else:
+                audio_data = resp.data
+                media_type = resp.mime_type
+        else:
+            audio_data = resp.audio_data
+            media_type = resp.media_type
+
+        return UnifiedTTSResponse(audio_data=audio_data, media_type=media_type)
 
     def get_router(self) -> APIRouter:
         router = APIRouter()
