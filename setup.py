@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="speech_gateway",
-    version="0.2.2",
+    version="0.2.3",
     url="https://github.com/uezo/speech-gateway",
     author="uezo",
     author_email="uezo@uezo.net",
