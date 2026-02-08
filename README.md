@@ -5,7 +5,7 @@ A reverse proxy server that enhances speech synthesis with essential, extensible
 
 ## 💎 Features
 
-- 🥰 **Supports Popular Speech Services**: Works seamlessly with AivisSpeech, VOICEVOX, Style-Bert-VITS2, CoeFont, OpenAI and Azure — and lets you integrate additional services to suit your needs.
+- 🥰 **Supports Popular Speech Services**: Works seamlessly with Aivis Cloud / AivisSpeech, VOICEVOX, Style-Bert-VITS2, CoeFont, OpenAI and Azure — and lets you integrate additional services to suit your needs.
 - 🗂️ **Caching**: Boost response speed and save API calls with built-in audio caching.
 - 🔄 **Format Conversion**: Effortlessly convert WAV to MP3 for bandwidth-friendly responses.
 - 📊 **Performance Metrics**: Track synthesis time and cache hits for in-depth insights.

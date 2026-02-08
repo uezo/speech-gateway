@@ -29,10 +29,11 @@ def is_mp3(data: bytes) -> bool:
             )
             id3_size += tag_size
         data = data[id3_size:]
-    
+
     if len(data) < 2:
         return False
-    return data[:2] in [b"\xFF\xFB", b"\xFF\xF3", b"\xFF\xF2"]
+    # MP3 frame sync: 0xFF followed by byte with upper 3 bits set (0xE0 or higher)
+    return data[0] == 0xFF and (data[1] & 0xE0) == 0xE0
 
 
 def transcribe(data: bytes, audio_format: str) -> str:
